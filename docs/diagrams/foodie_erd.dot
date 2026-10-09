@@ -1,0 +1,95 @@
+digraph ERD {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.55, ranksep=1.0, splines=ortho, fontname="Arial"];
+  node [shape=plain, fontname="Arial"];
+  edge [color="#444444", penwidth=1.2, arrowsize=0.7, fontname="Arial", fontsize=9];
+
+  user [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#F4F7FB">
+      <TR><TD BGCOLOR="#243B53"><FONT COLOR="white"><B>APP_USER</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">username : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">email : VARCHAR UNIQUE</TD></TR>
+      <TR><TD ALIGN="LEFT">password : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">phone : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">address : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">role : USER / ADMIN</TD></TR>
+    </TABLE>>];
+
+  customer [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#F4F7FB">
+      <TR><TD BGCOLOR="#243B53"><FONT COLOR="white"><B>CUSTOMER</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK customerId : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">customerName : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">address : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">city : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">phoneNumber : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">FK user_id : BIGINT UNIQUE</TD></TR>
+    </TABLE>>];
+
+  token [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#F4F7FB">
+      <TR><TD BGCOLOR="#243B53"><FONT COLOR="white"><B>APP_USER_TOKEN</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">refresh : VARCHAR UNIQUE</TD></TR>
+      <TR><TD ALIGN="LEFT">expiresAt : DATETIME</TD></TR>
+      <TR><TD ALIGN="LEFT">FK user_id : BIGINT</TD></TR>
+    </TABLE>>];
+
+  product [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFF8EE">
+      <TR><TD BGCOLOR="#B45309"><FONT COLOR="white"><B>PRODUCT</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK productId : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">productName : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">description : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">unitPrice : DOUBLE</TD></TR>
+      <TR><TD ALIGN="LEFT">rating : DOUBLE</TD></TR>
+      <TR><TD ALIGN="LEFT">imageUrl : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">category : VARCHAR</TD></TR>
+    </TABLE>>];
+
+  favorite [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFF1F2">
+      <TR><TD BGCOLOR="#BE123C"><FONT COLOR="white"><B>FAVORITE</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">FK user_id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">FK product_id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">createdAt : DATETIME</TD></TR>
+    </TABLE>>];
+
+  order [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#F0FDF4">
+      <TR><TD BGCOLOR="#166534"><FONT COLOR="white"><B>ORDER_TB</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK orderId : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">orderDate : DATETIME</TD></TR>
+      <TR><TD ALIGN="LEFT">status : processing / purchased / cancelled</TD></TR>
+      <TR><TD ALIGN="LEFT">orderType : Dine In / Takeaway / Delivery</TD></TR>
+      <TR><TD ALIGN="LEFT">paymentMethod : Cash / QR / Card</TD></TR>
+      <TR><TD ALIGN="LEFT">deliveryAddress : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">deliveryFee : DOUBLE</TD></TR>
+      <TR><TD ALIGN="LEFT">totalAmount : DOUBLE</TD></TR>
+      <TR><TD ALIGN="LEFT">promoCode : VARCHAR</TD></TR>
+      <TR><TD ALIGN="LEFT">discount : DOUBLE</TD></TR>
+      <TR><TD ALIGN="LEFT">FK customer_id : BIGINT</TD></TR>
+    </TABLE>>];
+
+  item [label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#F0FDF4">
+      <TR><TD BGCOLOR="#166534"><FONT COLOR="white"><B>PRODUCT_ORDER</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT">PK id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">quantity : INT</TD></TR>
+      <TR><TD ALIGN="LEFT">unitPrice : DOUBLE</TD></TR>
+      <TR><TD ALIGN="LEFT">selectedSize : INT</TD></TR>
+      <TR><TD ALIGN="LEFT">cheese : BOOLEAN</TD></TR>
+      <TR><TD ALIGN="LEFT">bacon : BOOLEAN</TD></TR>
+      <TR><TD ALIGN="LEFT">FK order_id : BIGINT</TD></TR>
+      <TR><TD ALIGN="LEFT">FK product_id : BIGINT</TD></TR>
+    </TABLE>>];
+
+  user -> customer [label=" 1 : 1  profile"];
+  user -> token [label=" 1 : M  refresh tokens"];
+  user -> favorite [label=" 1 : M  favorites"];
+  product -> favorite [label=" 1 : M  saved by users"];
+  customer -> order [label=" 1 : M  orders"];
+  order -> item [label=" 1 : M  order items"];
+  product -> item [label=" 1 : M  appears in"];
+}

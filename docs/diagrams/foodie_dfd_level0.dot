@@ -1,0 +1,14 @@
+digraph DFD0 {
+  graph [rankdir=LR, bgcolor="white", pad=0.5, nodesep=0.8, ranksep=1.1, splines=ortho, fontname="Arial"];
+  node [fontname="Arial", fontsize=11]; edge [fontname="Arial", fontsize=9, color="#444444", penwidth=1.2, arrowsize=0.7];
+  user [shape=box, style="rounded", label="USER\nMobile App", width=1.7, height=0.8];
+  system [shape=box, style="rounded,filled", fillcolor="#E8F0FE", color="#243B53", penwidth=1.8, label="0\nFOODIE ORDERING SYSTEM", width=2.7, height=1.2];
+  admin [shape=box, style="rounded", label="ADMIN\nManagement", width=1.7, height=0.8];
+  db [shape=cylinder, label="D1\nPostgreSQL\nDatabase", width=1.8, height=1.0];
+  user -> system [label=" Register / Login\nBrowse food\nFavorites\nCheckout / Orders\nDelivery address"];
+  system -> user [label=" JWT token\nFood data\nFavorites\nOrder result / status"];
+  admin -> system [label=" Product CRUD\nCustomer data\nOrder management\nStatus update"];
+  system -> admin [label=" Product / customer data\nOrders / statuses"];
+  system -> db [label=" Read / Write"];
+  db -> system [label=" Data"];
+}

@@ -1,0 +1,42 @@
+digraph DFD1 {
+  graph [rankdir=LR, bgcolor="white", pad=0.35, nodesep=0.45, ranksep=0.9, splines=ortho, fontname="Arial"];
+  node [fontname="Arial", fontsize=10]; edge [fontname="Arial", fontsize=8.5, color="#444444", penwidth=1.1, arrowsize=0.65];
+  user [shape=box, style="rounded", label="USER", width=1.1];
+  admin [shape=box, style="rounded", label="ADMIN", width=1.1];
+  auth [shape=circle, style="filled", fillcolor="#E8F0FE", label="1.0\nAuthentication"];
+  food [shape=circle, style="filled", fillcolor="#FFF8EE", label="2.0\nFood &\nCategory"];
+  fav [shape=circle, style="filled", fillcolor="#FFF1F2", label="3.0\nFavorites"];
+  order [shape=circle, style="filled", fillcolor="#F0FDF4", label="4.0\nCheckout &\nOrders"];
+  address [shape=circle, style="filled", fillcolor="#F0FDF4", label="5.0\nDelivery\nAddress"];
+  promo [shape=circle, style="filled", fillcolor="#FEFCE8", label="6.0\nPromo"];
+  adminm [shape=circle, style="filled", fillcolor="#F3E8FF", label="7.0\nAdmin\nManagement"];
+  d1 [shape=box, label="D1\nUsers / Customers"];
+  d2 [shape=box, label="D2\nProducts"];
+  d3 [shape=box, label="D3\nFavorites"];
+  d4 [shape=box, label="D4\nOrders / Items"];
+  d5 [shape=box, label="D5\nRefresh Tokens"];
+
+  user -> auth [label="credentials"];
+  auth -> user [label="JWT / account"];
+  auth -> d1 [label="user data"];
+  auth -> d5 [label="refresh token"];
+  user -> food [label="search / category"];
+  food -> user [label="food list / detail"];
+  food -> d2 [label="read products"];
+  user -> fav [label="toggle favorite"];
+  fav -> user [label="favorite ids / list"];
+  fav -> d3 [label="read / write"];
+  user -> order [label="cart + checkout"];
+  order -> user [label="order result"];
+  order -> d4 [label="create / read / update"];
+  user -> address [label="save address"];
+  address -> user [label="address data"];
+  address -> d1 [label="update profile"];
+  user -> promo [label="promo code"];
+  promo -> user [label="discount result"];
+  admin -> adminm [label="management request"];
+  adminm -> admin [label="data / status"];
+  adminm -> d2 [label="product CRUD"];
+  adminm -> d4 [label="order status"];
+  adminm -> d1 [label="customer data"];
+}
