@@ -12,4 +12,5 @@ public class ProductResponse {
     @JsonProperty("rating") private Double rating;
     @JsonProperty("imageUrl") private String imageUrl;
     @JsonProperty("category") private String category;
+    @JsonProperty("categoryId") private Long categoryId;
 }

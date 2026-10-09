@@ -34,25 +34,24 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponseUtil.pagination(HttpStatus.OK, productService.list(page, size, direction, search, category)));
     }
 
-    @GetMapping("/categories")
-    public ResponseEntity<SuccessResponse<List<String>>> categories() {
-        return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.categories()));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<SuccessResponse<ProductResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.get(id)));
     }
 
-    @PostMapping
+    @PostMapping(consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<ProductResponse>> create(@Valid @RequestBody ProductRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseUtil.success(HttpStatus.CREATED, productService.create(request)));
+    public ResponseEntity<SuccessResponse<ProductResponse>> create(
+            @Valid @ModelAttribute ProductRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponseUtil.success(HttpStatus.CREATED, productService.create(request)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<ProductResponse>> update(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<SuccessResponse<ProductResponse>> update(
+            @PathVariable Long id,
+            @Valid @ModelAttribute ProductRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.update(id, request)));
     }
 

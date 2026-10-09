@@ -2,8 +2,10 @@ package com.api.v1.bearerauth.service.impl;
 
 import com.api.v1.bearerauth.common.exception.CustomException;
 import com.api.v1.bearerauth.model.entity.Product;
+import com.api.v1.bearerauth.model.entity.Category;
 import com.api.v1.bearerauth.model.request.ProductRequest;
 import com.api.v1.bearerauth.model.response.ProductResponse;
+import com.api.v1.bearerauth.repository.CategoryRepository;
 import com.api.v1.bearerauth.repository.ProductRepository;
 import com.api.v1.bearerauth.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +16,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final ModelMapper mapper;
 
     @Override
@@ -28,21 +38,15 @@ public class ProductServiceImpl implements ProductService {
         String q = search == null ? "" : search.trim();
         String c = category == null ? "" : category.trim();
         if (!q.isEmpty() && !c.isEmpty()) {
-            return productRepository.findByProductNameContainingIgnoreCaseAndCategoryIgnoreCase(q, c, pageable).map(product -> mapper.map(product, ProductResponse.class));
+            return productRepository.findByProductNameAndCategoryName(q, c, pageable).map(this::toResponse);
         }
         if (!q.isEmpty()) {
-            return productRepository.findByProductNameContainingIgnoreCaseOrCategoryContainingIgnoreCase(q, q, pageable).map(product -> mapper.map(product, ProductResponse.class));
+            return productRepository.findByProductNameOrCategoryName(q, q, pageable).map(this::toResponse);
         }
         if (!c.isEmpty()) {
-            return productRepository.findByCategoryIgnoreCase(c, pageable).map(product -> mapper.map(product, ProductResponse.class));
+            return productRepository.findByCategoryName(c, pageable).map(this::toResponse);
         }
-        return productRepository.findAll(pageable).map(product -> mapper.map(product, ProductResponse.class));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public java.util.List<String> categories() {
-        return productRepository.findAll().stream().map(Product::getCategory).filter(java.util.Objects::nonNull).distinct().sorted().toList();
+        return productRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Override
@@ -50,15 +54,15 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse get(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Product not found"));
-        return mapper.map(product, ProductResponse.class);
+        return toResponse(product);
     }
 
     @Override
     @Transactional
     public ProductResponse create(ProductRequest request) {
         Product product = new Product();
-        apply(product, request);
-        return mapper.map(productRepository.save(product), ProductResponse.class);
+        apply(product, request, true);
+        return toResponse(productRepository.save(product));
     }
 
     @Override
@@ -66,8 +70,8 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse update(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Product not found"));
-        apply(product, request);
-        return mapper.map(productRepository.save(product), ProductResponse.class);
+        apply(product, request, false);
+        return toResponse(productRepository.save(product));
     }
 
     @Override
@@ -79,12 +83,46 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
     }
 
-    private void apply(Product product, ProductRequest request) {
+    private void apply(Product product, ProductRequest request, boolean imageRequired) {
         product.setProductName(request.getName().trim());
         product.setDescription(request.getSubtitle().trim());
         product.setUnitPrice(request.getPrice());
-        product.setCategory(request.getCategory().trim());
-        product.setImageUrl(request.getImageUrl().trim());
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "Category not found"));
+        product.setCategory(category);
+        if (imageRequired && (request.getImage() == null || request.getImage().isEmpty())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Product image is required");
+        }
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            product.setImageUrl(storeImage(request.getImage()));
+        }
         product.setRating(request.getRating());
+    }
+
+    private String storeImage(MultipartFile image) {
+        String contentType = image.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Only image files are allowed");
+        }
+        String originalName = image.getOriginalFilename();
+        String extension = originalName != null && originalName.contains(".")
+                ? originalName.substring(originalName.lastIndexOf('.')).toLowerCase()
+                : "";
+        try {
+            Path directory = Paths.get("uploads", "products");
+            Files.createDirectories(directory);
+            String fileName = UUID.randomUUID() + extension;
+            Files.copy(image.getInputStream(), directory.resolve(fileName));
+            return "/uploads/products/" + fileName;
+        } catch (IOException exception) {
+            throw new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store product image");
+        }
+    }
+
+    private ProductResponse toResponse(Product product) {
+        ProductResponse response = mapper.map(product, ProductResponse.class);
+        response.setCategory(product.getCategory().getName());
+        response.setCategoryId(product.getCategory().getCategoryId());
+        return response;
     }
 }
