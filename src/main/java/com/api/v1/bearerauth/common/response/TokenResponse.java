@@ -19,9 +19,9 @@ public class TokenResponse {
     private Date issuedAt;
     private Date expiredAt;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("accessToken")
-    public String getAccessToken() { return access; }
-
-    @com.fasterxml.jackson.annotation.JsonProperty("refreshToken")
-    public String getRefreshToken() { return refresh; }
+//    @com.fasterxml.jackson.annotation.JsonProperty("accessToken")
+//    public String getAccessToken() { return access; }
+//
+//    @com.fasterxml.jackson.annotation.JsonProperty("refreshToken")
+//    public String getRefreshToken() { return refresh; }
 }

@@ -7,9 +7,12 @@ import org.springframework.data.domain.Sort;
 
 public interface ProductService {
     Page<ProductResponse> list(int page, int size, Sort.Direction direction, String search, String category);
+
     ProductResponse get(Long id);
-    java.util.List<String> categories();
+
     ProductResponse create(ProductRequest request);
+
     ProductResponse update(Long id, ProductRequest request);
+
     void delete(Long id);
 }

@@ -34,11 +34,6 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponseUtil.pagination(HttpStatus.OK, productService.list(page, size, direction, search, category)));
     }
 
-    @GetMapping("/categories")
-    public ResponseEntity<SuccessResponse<List<String>>> categories() {
-        return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.categories()));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<SuccessResponse<ProductResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.get(id)));
