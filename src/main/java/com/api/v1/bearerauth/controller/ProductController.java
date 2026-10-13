@@ -2,7 +2,6 @@ package com.api.v1.bearerauth.controller;
 
 import com.api.v1.bearerauth.common.response.PaginationResponse;
 import com.api.v1.bearerauth.common.response.SuccessResponse;
-import com.api.v1.bearerauth.model.request.ProductRequest;
 import com.api.v1.bearerauth.model.response.ProductResponse;
 import com.api.v1.bearerauth.service.ProductService;
 import com.api.v1.bearerauth.util.ApiResponseUtil;
@@ -16,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.api.v1.bearerauth.model.request.CreateProductRequest;
+import com.api.v1.bearerauth.model.request.UpdateProductRequest;
 
 import java.util.List;
 
@@ -42,13 +43,13 @@ public class ProductController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<ProductResponse>> create(@Valid @ModelAttribute ProductRequest request) {
+    public ResponseEntity<SuccessResponse<ProductResponse>> create(@Valid @ModelAttribute CreateProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseUtil.success(HttpStatus.CREATED, productService.create(request)));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<ProductResponse>> update(@PathVariable Long id, @Valid @ModelAttribute ProductRequest request) {
+    public ResponseEntity<SuccessResponse<ProductResponse>> update(@PathVariable Long id, @Valid @ModelAttribute UpdateProductRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.update(id, request)));
     }
 

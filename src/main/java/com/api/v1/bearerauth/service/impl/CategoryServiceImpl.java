@@ -14,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -52,7 +54,11 @@ public class CategoryServiceImpl implements CategoryService {
                     throw new CustomException(HttpStatus.CONFLICT, "Category already exists");
                 });
 
-        String imageUrl = fileStorageService.store(request.getImage(), "categories");
+        String imageUrl = null;
+
+        if (hasImage(request.getImage())) {
+            imageUrl = fileStorageService.store(request.getImage(), "categories");
+        }
 
         Category category = Category.builder()
                 .categoryName(request.getCategoryName().trim())
@@ -62,7 +68,6 @@ public class CategoryServiceImpl implements CategoryService {
 
         return toResponse(categoryRepository.save(category));
     }
-
 
     @Override
     @Transactional
@@ -75,19 +80,24 @@ public class CategoryServiceImpl implements CategoryService {
                     throw new CustomException(HttpStatus.CONFLICT, "Category already exists");
                 });
 
+        String oldImageUrl = category.getImageUrl();
+        String newImageUrl = null;
+
         category.setCategoryName(request.getCategoryName().trim());
         category.setDescription(request.getDescription());
 
-        String imageUrl = fileStorageService.store(request.getImage(), "categories");
+        if (hasImage(request.getImage())) {
+            newImageUrl = fileStorageService.store(request.getImage(), "categories");
+            category.setImageUrl(newImageUrl);
+        }
+        Category savedCategory = categoryRepository.save(category);
 
-        if (imageUrl != null) {
-            category.setImageUrl(imageUrl);
+        if (newImageUrl != null && oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+            fileStorageService.delete(oldImageUrl);
         }
 
-
-        return toResponse(categoryRepository.save(category));
+        return toResponse(savedCategory);
     }
-
 
     @Override
     @Transactional
@@ -98,17 +108,30 @@ public class CategoryServiceImpl implements CategoryService {
             throw new CustomException(HttpStatus.CONFLICT, "Cannot delete category because it has products");
         }
 
-        categoryRepository.delete(category);
-    }
+        String imageUrl = category.getImageUrl();
 
+        categoryRepository.delete(category);
+
+        if (imageUrl != null) {
+            fileStorageService.delete(imageUrl);
+        }
+    }
 
     private Category findCategory(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
     }
 
+    private boolean hasImage(MultipartFile image) {
+        return image != null && !image.isEmpty();
+    }
+
     private CategoryResponse toResponse(Category category) {
-        List<ProductResponse> products = category.getProducts()
+        List<Product> categoryProducts = category.getProducts() == null
+                ? Collections.emptyList()
+                : category.getProducts();
+
+        List<ProductResponse> products = categoryProducts
                 .stream()
                 .map(this::toProductResponse)
                 .toList();
@@ -139,6 +162,4 @@ public class CategoryServiceImpl implements CategoryService {
 
         return response;
     }
-
-
 }
