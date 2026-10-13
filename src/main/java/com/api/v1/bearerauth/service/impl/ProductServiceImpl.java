@@ -3,7 +3,8 @@ package com.api.v1.bearerauth.service.impl;
 import com.api.v1.bearerauth.common.exception.CustomException;
 import com.api.v1.bearerauth.model.entity.Category;
 import com.api.v1.bearerauth.model.entity.Product;
-import com.api.v1.bearerauth.model.request.ProductRequest;
+import com.api.v1.bearerauth.model.request.CreateProductRequest;
+import com.api.v1.bearerauth.model.request.UpdateProductRequest;
 import com.api.v1.bearerauth.model.response.ProductResponse;
 import com.api.v1.bearerauth.repository.CategoryRepository;
 import com.api.v1.bearerauth.repository.ProductRepository;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,30 +73,68 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse create(ProductRequest request) {
+    public ProductResponse create(CreateProductRequest request) {
+        if (!hasImage(request.getImage())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Product image is required");
+        }
+
+        Category category = findCategory(request.getCategoryId());
+
+        String imageUrl = fileStorageService.store(request.getImage(), "products");
+
         Product product = new Product();
-        apply(product, request);
+        product.setProductName(request.getProductName().trim());
+        product.setDescription(request.getDescription().trim());
+        product.setUnitPrice(request.getUnitPrice());
+        product.setRating(request.getRating());
+        product.setImageUrl(imageUrl);
+        product.setCategory(category);
 
         return toResponse(productRepository.save(product));
     }
 
+
     @Override
     @Transactional
-    public ProductResponse update(Long id, ProductRequest request) {
+    public ProductResponse update(Long id, UpdateProductRequest request) {
         Product product = findProduct(id);
+        Category category = findCategory(request.getCategoryId());
 
-        apply(product, request);
+        String oldImageUrl = product.getImageUrl();
+        String newImageUrl = null;
 
-        return toResponse(productRepository.save(product));
+        product.setProductName(request.getProductName().trim());
+        product.setDescription(request.getDescription().trim());
+        product.setUnitPrice(request.getUnitPrice());
+        product.setRating(request.getRating());
+        product.setCategory(category);
+
+        if (hasImage(request.getImage())) {
+            newImageUrl = fileStorageService.store(request.getImage(), "products");
+            product.setImageUrl(newImageUrl);
+        }
+
+        Product savedProduct = productRepository.save(product);
+
+        if (newImageUrl != null && oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+            fileStorageService.delete(oldImageUrl);
+        }
+
+        return toResponse(savedProduct);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
         Product product = findProduct(id);
-        productRepository.delete(product);
-    }
+        String imageUrl = product.getImageUrl();
 
+        productRepository.delete(product);
+
+        if (imageUrl != null) {
+            fileStorageService.delete(imageUrl);
+        }
+    }
 
     private Product findProduct(Long id) {
         return productRepository.findById(id)
@@ -106,18 +146,8 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Category not found"));
     }
 
-    private void apply(Product product, ProductRequest request) {
-        Category category = findCategory(request.getCategoryId());
-        String imageUrl = fileStorageService.store(request.getImage(), "products");
-        product.setProductName(request.getProductName().trim());
-        product.setDescription(request.getDescription().trim());
-        product.setUnitPrice(request.getUnitPrice());
-        product.setImageUrl(imageUrl);
-        if (imageUrl != null) {
-            product.setImageUrl(imageUrl);
-        }
-        product.setRating(request.getRating());
-        product.setCategory(category);
+    private boolean hasImage(MultipartFile image) {
+        return image != null && !image.isEmpty();
     }
 
     private ProductResponse toResponse(Product product) {
