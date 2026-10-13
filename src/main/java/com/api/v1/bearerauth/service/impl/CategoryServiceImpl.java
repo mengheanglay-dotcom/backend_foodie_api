@@ -9,6 +9,7 @@ import com.api.v1.bearerauth.model.response.ProductResponse;
 import com.api.v1.bearerauth.repository.CategoryRepository;
 import com.api.v1.bearerauth.repository.ProductRepository;
 import com.api.v1.bearerauth.service.CategoryService;
+import com.api.v1.bearerauth.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -50,10 +52,12 @@ public class CategoryServiceImpl implements CategoryService {
                     throw new CustomException(HttpStatus.CONFLICT, "Category already exists");
                 });
 
+        String imageUrl = fileStorageService.store(request.getImage(), "categories");
+
         Category category = Category.builder()
                 .categoryName(request.getCategoryName().trim())
                 .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .build();
 
         return toResponse(categoryRepository.save(category));
@@ -73,7 +77,13 @@ public class CategoryServiceImpl implements CategoryService {
 
         category.setCategoryName(request.getCategoryName().trim());
         category.setDescription(request.getDescription());
-        category.setImageUrl(request.getImageUrl());
+
+        String imageUrl = fileStorageService.store(request.getImage(), "categories");
+
+        if (imageUrl != null) {
+            category.setImageUrl(imageUrl);
+        }
+
 
         return toResponse(categoryRepository.save(category));
     }

@@ -2,6 +2,7 @@ package com.api.v1.bearerauth.model.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class ProductRequest {
@@ -20,8 +21,8 @@ public class ProductRequest {
     @Max(value = 5, message = "Rating must be at most 5")
     private Double rating;
 
-    @NotBlank(message = "Image URL is required")
-    private String imageUrl;
+    @NotNull
+    private MultipartFile image;
 
     @NotNull(message = "Category ID is required")
     private Long categoryId;

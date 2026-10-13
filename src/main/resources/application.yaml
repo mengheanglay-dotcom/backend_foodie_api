@@ -5,6 +5,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/foodie_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:123}
+  servlet:
+      multipart:
+        max-file-size: 5MB
+        max-request-size: 10MB
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,6 +19,8 @@ spring:
       include-stacktrace: never
 
 app:
+  upload:
+    dir: uploads
   jwt:
     access-expiration: 900000
     refresh-expiration: 604800000
@@ -22,3 +28,4 @@ app:
 
 server:
   port: 8080
+

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -15,6 +16,6 @@ public class CategoryRequest {
     @Size(max = 1000, message = "Description must be less than 1000 characters")
     private String description;
 
-    private String imageUrl;
+    private MultipartFile image;
 }
 

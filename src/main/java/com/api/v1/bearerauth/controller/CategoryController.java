@@ -8,6 +8,7 @@ import com.api.v1.bearerauth.util.ApiResponseUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,19 +31,19 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, categoryService.get(id)));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<CategoryResponse>> create(@Valid @RequestBody CategoryRequest request) {
+    public ResponseEntity<SuccessResponse<CategoryResponse>> create(@Valid @ModelAttribute CategoryRequest request) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponseUtil.success(HttpStatus.CREATED, categoryService.create(request)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<CategoryResponse>> update(
             @PathVariable Long id,
-            @Valid @RequestBody CategoryRequest request
+            @Valid @ModelAttribute CategoryRequest request
     ) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, categoryService.update(id, request)));
     }

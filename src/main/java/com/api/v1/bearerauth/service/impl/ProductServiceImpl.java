@@ -7,6 +7,7 @@ import com.api.v1.bearerauth.model.request.ProductRequest;
 import com.api.v1.bearerauth.model.response.ProductResponse;
 import com.api.v1.bearerauth.repository.CategoryRepository;
 import com.api.v1.bearerauth.repository.ProductRepository;
+import com.api.v1.bearerauth.service.FileStorageService;
 import com.api.v1.bearerauth.service.ProductService;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -29,6 +30,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ModelMapper mapper;
+    private final FileStorageService fileStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -80,6 +82,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponse update(Long id, ProductRequest request) {
         Product product = findProduct(id);
+
         apply(product, request);
 
         return toResponse(productRepository.save(product));
@@ -105,11 +108,14 @@ public class ProductServiceImpl implements ProductService {
 
     private void apply(Product product, ProductRequest request) {
         Category category = findCategory(request.getCategoryId());
-
+        String imageUrl = fileStorageService.store(request.getImage(), "products");
         product.setProductName(request.getProductName().trim());
         product.setDescription(request.getDescription().trim());
         product.setUnitPrice(request.getUnitPrice());
-        product.setImageUrl(request.getImageUrl().trim());
+        product.setImageUrl(imageUrl);
+        if (imageUrl != null) {
+            product.setImageUrl(imageUrl);
+        }
         product.setRating(request.getRating());
         product.setCategory(category);
     }

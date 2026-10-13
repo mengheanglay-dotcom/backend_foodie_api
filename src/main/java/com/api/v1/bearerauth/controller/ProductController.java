@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -39,15 +40,15 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.get(id)));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<ProductResponse>> create(@Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<SuccessResponse<ProductResponse>> create(@Valid @ModelAttribute ProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseUtil.success(HttpStatus.CREATED, productService.create(request)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<ProductResponse>> update(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<SuccessResponse<ProductResponse>> update(@PathVariable Long id, @Valid @ModelAttribute ProductRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, productService.update(id, request)));
     }
 
