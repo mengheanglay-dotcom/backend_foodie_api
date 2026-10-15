@@ -11,11 +11,11 @@ public class AppUserAddRequest {
     @Pattern(regexp = "^[a-zA-Z\\s]+$", message = "Username allow only character")
     private String username;
 
-    private String address;
-
-    @NotBlank(message = "Phone can not be blank")
-    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Invalid phone number")
-    private String phone;
+//    private String address;
+//
+//    @NotBlank(message = "Phone can not be blank")
+//    @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Invalid phone number")
+//    private String phone;
 
     @NotBlank(message = "Email can not be blank")
     @Email(message = "Invalid email address")
