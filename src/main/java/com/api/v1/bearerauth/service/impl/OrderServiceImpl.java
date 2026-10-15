@@ -9,6 +9,7 @@ import com.api.v1.bearerauth.repository.*;
 import com.api.v1.bearerauth.security.CurrentUserService;
 import com.api.v1.bearerauth.service.OrderItemService;
 import com.api.v1.bearerauth.service.OrderService;
+import com.api.v1.bearerauth.service.PromoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private final CustomerRepository customerRepository;
     private final CurrentUserService currentUserService;
     private final OrderItemService orderItemService;
+    private final PromoService promoService;
 
     @Override
     @Transactional(readOnly = true)
@@ -159,18 +161,34 @@ public class OrderServiceImpl implements OrderService {
 
         subtotal = roundMoney(subtotal);
 
-        // Apply promo code
+        // Apply promotion using PromoService
         String code = request.getPromoCode() == null ? "" : request.getPromoCode().trim().toUpperCase();
 
-        double discount = "FOODIE10".equals(code) && subtotal > 0 ? roundMoney(subtotal * PROMO_RATE) : 0.0;
+        double discount = 0.0;
+        String appliedCode = "";
 
-        order.setPromoCode(discount > 0 ? code : "");
+        if (!code.isBlank()) {
+            PromoValidateRequest promoRequest = new PromoValidateRequest();
+
+            promoRequest.setCode(code);
+            promoRequest.setSubtotal(subtotal);
+
+            PromoResponse promoResult = promoService.validate(promoRequest);
+
+            if (promoResult.isValid()) {
+                discount = roundMoney(promoResult.getDiscount());
+                appliedCode = promoResult.getCode();
+            }
+        }
+
+        order.setPromoCode(appliedCode);
         order.setDiscount(discount);
 
         // Calculate final total
         double total = subtotal + order.getDeliveryFee() - discount;
 
         order.setTotalAmount(roundMoney(total));
+
     }
 
 
@@ -250,9 +268,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private double roundMoney(double amount) {
-        return java.math.BigDecimal.valueOf(amount)
-                .setScale(2, java.math.RoundingMode.HALF_UP)
-                .doubleValue();
+        return java.math.BigDecimal.valueOf(amount).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue();
     }
 
 
