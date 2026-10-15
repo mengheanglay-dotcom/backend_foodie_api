@@ -5,7 +5,10 @@ import lombok.Data;
 
 @Data
 public class CustomerRequest {
-    @NotBlank private String address;
-    @NotBlank private String customerName;
-    @NotBlank private String phoneNumber;
+    @NotBlank
+    private String address;
+    @NotBlank
+    private String customerName;
+    @NotBlank
+    private String phoneNumber;
 }

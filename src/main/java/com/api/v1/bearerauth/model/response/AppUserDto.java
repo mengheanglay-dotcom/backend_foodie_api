@@ -15,4 +15,8 @@ public class AppUserDto {
 
     private Long customerId;
     private String username;
+
+    private String address;
+    private String city;
+    private String phoneNumber;
 }

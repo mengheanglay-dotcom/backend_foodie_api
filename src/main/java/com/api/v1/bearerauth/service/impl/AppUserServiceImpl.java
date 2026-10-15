@@ -244,6 +244,7 @@ public class AppUserServiceImpl implements AppUserService {
         customer.setCustomerName(request.getUsername().trim());
         customer.setAddress(request.getAddress() == null ? "" : request.getAddress().trim());
         customer.setPhoneNumber(request.getPhone().trim());
+        customer.setCity(request.getCity().trim());
 
         return toDto(appUserRepository.save(user));
     }
@@ -257,6 +258,9 @@ public class AppUserServiceImpl implements AppUserService {
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        dto.setAddress(user.getCustomer().getAddress());
+        dto.setCity(user.getCustomer().getCity());
+        dto.setPhoneNumber(user.getCustomer().getPhoneNumber());
 
         if (user.getCustomer() != null) {
             dto.setCustomerId(user.getCustomer().getCustomerId());
