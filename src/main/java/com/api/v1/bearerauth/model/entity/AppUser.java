@@ -22,12 +22,6 @@ public class AppUser implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String username;
-
-    private String address;
-    private String phone;
-
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -38,11 +32,14 @@ public class AppUser implements UserDetails {
     @Column(nullable = false)
     private Roles role = Roles.USER;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean enabled = true;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Customer customer;
 
     public String getName() {
-        return username;
+        return customer == null ? email : customer.getCustomerName();
     }
 
     @Override
@@ -54,4 +51,10 @@ public class AppUser implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
 }

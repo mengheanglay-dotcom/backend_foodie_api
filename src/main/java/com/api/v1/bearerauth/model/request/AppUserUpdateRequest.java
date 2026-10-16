@@ -13,6 +13,8 @@ public class AppUserUpdateRequest {
 
     private String address;
 
+    private String city;
+
     @NotBlank(message = "Phone can not be blank")
     @Pattern(regexp = "^\\+?[0-9]{8,15}$", message = "Invalid phone number")
     private String phone;

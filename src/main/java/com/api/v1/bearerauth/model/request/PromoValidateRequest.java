@@ -7,6 +7,9 @@ import lombok.Data;
 
 @Data
 public class PromoValidateRequest {
-    @NotBlank private String code;
-    @NotNull @PositiveOrZero private Double subtotal;
+    @NotBlank
+    private String code;
+    @NotNull
+    @PositiveOrZero
+    private Double subtotal;
 }

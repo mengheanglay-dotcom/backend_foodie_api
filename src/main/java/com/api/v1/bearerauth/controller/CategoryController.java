@@ -8,21 +8,15 @@ import com.api.v1.bearerauth.util.ApiResponseUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/products/categories")
+@RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
@@ -37,17 +31,18 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, categoryService.get(id)));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<SuccessResponse<CategoryResponse>> create(@Valid @RequestBody CategoryRequest request) {
+    public ResponseEntity<SuccessResponse<CategoryResponse>> create(@Valid @ModelAttribute CategoryRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseUtil.success(HttpStatus.CREATED, categoryService.create(request)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<CategoryResponse>> update(
-            @PathVariable Long id, @Valid @RequestBody CategoryRequest request) {
+            @PathVariable Long id,
+            @Valid @ModelAttribute CategoryRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, categoryService.update(id, request)));
     }
 

@@ -1,9 +1,19 @@
 package com.api.v1.bearerauth.model.response;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+import java.util.List;
+
+@Getter
+@Setter
+@Builder
 public class CategoryResponse {
     private Long categoryId;
-    private String name;
+    private String categoryName;
+    private String description;
+    private String imageUrl;
+    private Long productCount;
+    private List<ProductResponse> products;
 }

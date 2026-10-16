@@ -7,26 +7,270 @@ import com.api.v1.bearerauth.model.request.*;
 import com.api.v1.bearerauth.model.response.*;
 import com.api.v1.bearerauth.repository.*;
 import com.api.v1.bearerauth.security.CurrentUserService;
+import com.api.v1.bearerauth.service.OrderItemService;
 import com.api.v1.bearerauth.service.OrderService;
+import com.api.v1.bearerauth.service.PromoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*; import org.springframework.http.HttpStatus; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime; import java.util.*;
+import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@Service @RequiredArgsConstructor
+import java.time.LocalDateTime;
+import java.util.*;
+
+
+@Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
- private static final double DELIVERY_FEE=2.0, PROMO_RATE=0.10;
- private final OrderTbRepository orderRepository; private final CustomerRepository customerRepository; private final ProductRepository productRepository; private final CurrentUserService currentUserService;
- @Override @Transactional(readOnly=true) public Page<OrderResponse> list(int page,int size,Sort.Direction direction){AppUser u=currentUserService.getCurrentUser(); PageRequest p=PageRequest.of(page-1,size,Sort.by(direction,"orderId")); return (u.getRole().name().equals("ADMIN")?orderRepository.findAll(p):orderRepository.findByCustomerUser(u,p)).map(this::toResponse);}
- @Override @Transactional(readOnly=true) public OrderResponse get(Long id){OrderTb o=findOrder(id); checkOwnerOrAdmin(o); return toResponse(o);}
- @Override @Transactional public OrderResponse create(OrderRequest r){return saveNew(r,null);}
- @Override @Transactional public OrderResponse update(Long id,OrderRequest r){OrderTb o=findOrder(id); checkOwnerOrAdmin(o); if(o.getStatus()!=OrderStatus.processing) throw new CustomException(HttpStatus.BAD_REQUEST,"Only processing orders can be updated"); applyOrder(o,r); return toResponse(orderRepository.save(o));}
- @Override @Transactional public void delete(Long id){OrderTb o=findOrder(id); checkOwnerOrAdmin(o); if(o.getStatus()!=OrderStatus.processing) throw new CustomException(HttpStatus.BAD_REQUEST,"Only processing orders can be deleted"); orderRepository.delete(o);}
- @Transactional public OrderResponse updateStatus(Long id,OrderStatusRequest r){OrderTb o=findOrder(id); o.setStatus(r.getStatus()); return toResponse(orderRepository.save(o));}
- private OrderResponse saveNew(OrderRequest r,Long ignored){AppUser u=currentUserService.getCurrentUser(); Customer c=customerRepository.findByUser(u).orElseThrow(()->new CustomException(HttpStatus.NOT_FOUND,"Customer profile not found")); OrderTb o=new OrderTb(); o.setCustomer(c); o.setOrderDate(LocalDateTime.now()); o.setStatus(OrderStatus.processing); applyOrder(o,r); return toResponse(orderRepository.save(o));}
- private void applyOrder(OrderTb o,OrderRequest r){if(r.getItems()==null||r.getItems().isEmpty()) throw new CustomException(HttpStatus.BAD_REQUEST,"Order must contain at least one product"); if(r.getOrderType()==OrderType.DELIVERY&&(r.getDeliveryAddress()==null||r.getDeliveryAddress().isBlank())) throw new CustomException(HttpStatus.BAD_REQUEST,"Delivery address is required for delivery orders"); o.setOrderType(r.getOrderType()); o.setPaymentMethod(r.getPaymentMethod()); o.setDeliveryAddress(r.getOrderType()==OrderType.DELIVERY?r.getDeliveryAddress().trim():""); o.setDeliveryFee(r.getOrderType()==OrderType.DELIVERY?DELIVERY_FEE:0.0); o.getItems().clear(); List<ProductOrder> items=createItems(o,r.getItems()); o.getItems().addAll(items); double subtotal=calculateTotal(items); String code=r.getPromoCode()==null?"":r.getPromoCode().trim().toUpperCase(); double discount= "FOODIE10".equals(code)&&subtotal>0 ? subtotal*PROMO_RATE : 0; o.setPromoCode(discount>0?code:""); o.setDiscount(discount); o.setTotalAmount(subtotal+o.getDeliveryFee()-discount); }
- private List<ProductOrder> createItems(OrderTb o,List<OrderItemRequest> rs){List<ProductOrder> items=new ArrayList<>(); for(OrderItemRequest r:rs){Product p=productRepository.findById(r.getProductId()).orElseThrow(()->new CustomException(HttpStatus.NOT_FOUND,"Product not found: "+r.getProductId())); int size=r.getSelectedSize()==null?0:r.getSelectedSize(); if(size<0||size>1) throw new CustomException(HttpStatus.BAD_REQUEST,"Selected size must be 0 or 1"); double unit=p.getUnitPrice()+(size==1?2:0)+(Boolean.TRUE.equals(r.getCheese())?1:0)+(Boolean.TRUE.equals(r.getBacon())?1.5:0); ProductOrder i=new ProductOrder(); i.setOrder(o); i.setProduct(p); i.setQuantity(r.getQuantity()); i.setSelectedSize(size); i.setCheese(Boolean.TRUE.equals(r.getCheese())); i.setBacon(Boolean.TRUE.equals(r.getBacon())); i.setUnitPrice(unit); items.add(i);} return items;}
- private double calculateTotal(List<ProductOrder> i){return i.stream().mapToDouble(x->x.getUnitPrice()*x.getQuantity()).sum();}
- private OrderTb findOrder(Long id){return orderRepository.findById(id).orElseThrow(()->new CustomException(HttpStatus.NOT_FOUND,"Order not found"));}
- private void checkOwnerOrAdmin(OrderTb o){AppUser u=currentUserService.getCurrentUser(); if(!u.getRole().name().equals("ADMIN")&&!o.getCustomer().getUser().getId().equals(u.getId())) throw new CustomException(HttpStatus.FORBIDDEN,"You can only access your own orders");}
- private OrderResponse toResponse(OrderTb o){OrderResponse r=new OrderResponse(); r.setOrderId(o.getOrderId()); r.setOrderDate(o.getOrderDate()); r.setStatus(o.getStatus()); r.setOrderType(o.getOrderType()); r.setPaymentMethod(o.getPaymentMethod()); r.setDeliveryAddress(o.getDeliveryAddress()); r.setDeliveryFee(o.getDeliveryFee()); r.setTotalAmount(o.getTotalAmount()); r.setPromoCode(o.getPromoCode()==null?"":o.getPromoCode()); r.setDiscount(o.getDiscount()==null?0:o.getDiscount()); r.setCustomerId(o.getCustomer().getCustomerId()); List<OrderItemResponse> out=new ArrayList<>(); int count=0; for(ProductOrder i:o.getItems()){OrderItemResponse x=new OrderItemResponse(); x.setId(i.getId()); x.setProductId(i.getProduct().getProductId()); x.setProductName(i.getProduct().getProductName()); x.setUnitPrice(i.getUnitPrice()); x.setQuantity(i.getQuantity()); x.setSize(i.getSelectedSize()==1?"Large":"Regular"); List<String> add=new ArrayList<>(); if(Boolean.TRUE.equals(i.getCheese()))add.add("Cheese"); if(Boolean.TRUE.equals(i.getBacon()))add.add("Bacon"); x.setAddOns(add); x.setSubtotal(i.getUnitPrice()*i.getQuantity()); out.add(x); count+=i.getQuantity();} r.setItems(out); r.setTotalItems(count); return r;}
+
+    private static final double DELIVERY_FEE = 2.0;
+    private static final double PROMO_RATE = 0.10;
+
+    private final OrderTbRepository orderRepository;
+    private final CustomerRepository customerRepository;
+    private final CurrentUserService currentUserService;
+    private final OrderItemService orderItemService;
+    private final PromoService promoService;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> list(int page, int size, Sort.Direction direction) {
+
+        AppUser user = currentUserService.getCurrentUser();
+
+        PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(direction, "orderId"));
+
+        if (user.getRole().name().equals("ADMIN")) {
+            return orderRepository.findAll(pageable).map(this::toResponse);
+        }
+
+        return orderRepository.findByCustomerUser(user, pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse get(Long id) {
+        OrderTb order = findOrder(id);
+        checkOwnerOrAdmin(order);
+
+        return toResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse create(OrderRequest request) {
+        return saveNew(request);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse update(Long id, OrderRequest request) {
+        OrderTb order = findOrder(id);
+
+        checkOwnerOrAdmin(order);
+
+        if (order.getStatus() != OrderStatus.processing) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Only processing orders can be updated");
+        }
+
+        applyOrder(order, request);
+
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        OrderTb order = findOrder(id);
+
+        checkOwnerOrAdmin(order);
+
+        if (order.getStatus() != OrderStatus.processing) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Only processing orders can be deleted");
+        }
+
+        orderRepository.delete(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateStatus(Long id, OrderStatusRequest request) {
+
+        OrderTb order = findOrder(id);
+
+        order.setStatus(request.getStatus());
+
+        return toResponse(orderRepository.save(order));
+    }
+
+    private OrderResponse saveNew(OrderRequest request) {
+        AppUser user = currentUserService.getCurrentUser();
+
+        Customer customer = customerRepository.findByUser(user).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Customer profile not found"));
+
+        OrderTb order = new OrderTb();
+
+        order.setCustomer(customer);
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus(OrderStatus.processing);
+
+        applyOrder(order, request);
+
+        return toResponse(orderRepository.save(order));
+    }
+
+
+    private void applyOrder(OrderTb order, OrderRequest request) {
+
+        if (request.getOrderType() == null) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Order type is required");
+        }
+
+        if (request.getPaymentMethod() == null) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Payment method is required");
+        }
+
+        order.setOrderType(request.getOrderType());
+        order.setPaymentMethod(request.getPaymentMethod());
+
+        // Set delivery address and fee first
+        boolean isDelivery = request.getOrderType() == OrderType.DELIVERY;
+
+        if (isDelivery && (request.getDeliveryAddress() == null || request.getDeliveryAddress().isBlank())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Delivery address is required");
+        }
+
+        order.setDeliveryAddress(isDelivery ? request.getDeliveryAddress().trim() : "");
+
+        order.setDeliveryFee(isDelivery ? DELIVERY_FEE : 0.0);
+
+        // Rebuild order items
+        order.getItems().clear();
+
+        List<ProductOrder> items = orderItemService.createItems(order, request.getItems());
+
+        order.getItems().addAll(items);
+
+        // Calculate subtotal including size and add-on prices
+        double subtotal = items.stream().mapToDouble(item -> {
+            double optionsTotal = item.getSelectedOptions().stream().mapToDouble(option -> option.getExtraPrice() == null ? 0.0 : option.getExtraPrice()).sum();
+
+            return (item.getUnitPrice() + optionsTotal) * item.getQuantity();
+        }).sum();
+
+        subtotal = roundMoney(subtotal);
+
+        // Apply promotion using PromoService
+        String code = request.getPromoCode() == null ? "" : request.getPromoCode().trim().toUpperCase();
+
+        double discount = 0.0;
+        String appliedCode = "";
+
+        if (!code.isBlank()) {
+            PromoValidateRequest promoRequest = new PromoValidateRequest();
+
+            promoRequest.setCode(code);
+            promoRequest.setSubtotal(subtotal);
+
+            PromoResponse promoResult = promoService.validate(promoRequest);
+
+            if (promoResult.isValid()) {
+                discount = roundMoney(promoResult.getDiscount());
+                appliedCode = promoResult.getCode();
+            }
+        }
+
+        order.setPromoCode(appliedCode);
+        order.setDiscount(discount);
+
+        // Calculate final total
+        double total = subtotal + order.getDeliveryFee() - discount;
+
+        order.setTotalAmount(roundMoney(total));
+
+    }
+
+
+    private OrderTb findOrder(Long id) {
+        return orderRepository.findById(id).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Order not found"));
+    }
+
+    private void checkOwnerOrAdmin(OrderTb order) {
+        AppUser user = currentUserService.getCurrentUser();
+
+        if (!user.getRole().name().equals("ADMIN") && !order.getCustomer().getUser().getId().equals(user.getId())) {
+
+            throw new CustomException(HttpStatus.FORBIDDEN, "You can only access your own orders");
+        }
+    }
+
+
+    private OrderResponse toResponse(OrderTb order) {
+
+        OrderResponse response = new OrderResponse();
+
+        response.setOrderId(order.getOrderId());
+        response.setOrderDate(order.getOrderDate());
+        response.setStatus(order.getStatus());
+        response.setOrderType(order.getOrderType());
+        response.setPaymentMethod(order.getPaymentMethod());
+        response.setDeliveryAddress(order.getDeliveryAddress());
+
+        response.setDeliveryFee(roundMoney(order.getDeliveryFee() == null ? 0.0 : order.getDeliveryFee()));
+
+        response.setTotalAmount(roundMoney(order.getTotalAmount() == null ? 0.0 : order.getTotalAmount()));
+
+        response.setPromoCode(order.getPromoCode() == null ? "" : order.getPromoCode());
+
+        response.setDiscount(roundMoney(order.getDiscount() == null ? 0.0 : order.getDiscount()));
+
+        response.setCustomerId(order.getCustomer().getCustomerId());
+
+        List<OrderItemResponse> itemResponses = new ArrayList<>();
+        int totalItems = 0;
+
+        for (ProductOrder item : order.getItems()) {
+
+            OrderItemResponse itemResponse = new OrderItemResponse();
+
+            itemResponse.setId(item.getId());
+            itemResponse.setProductId(item.getProduct().getProductId());
+            itemResponse.setName(item.getProduct().getProductName());
+            itemResponse.setQuantity(item.getQuantity());
+            itemResponse.setUnitPrice(roundMoney(item.getUnitPrice()));
+
+            // Get the selected size
+            String size = item.getSelectedOptions().stream().filter(option -> option.getOptionType() == OptionType.SIZE).map(ProductOrderOption::getOptionName).findFirst().orElse(null);
+
+            itemResponse.setSize(size);
+
+            // Get selected add-on names
+            List<String> addOns = item.getSelectedOptions().stream().filter(option -> option.getOptionType() == OptionType.ADD_ON).map(ProductOrderOption::getOptionName).toList();
+
+            itemResponse.setAddOns(addOns);
+
+            // Base price + selected option prices, multiplied by quantity
+            double optionsTotal = item.getSelectedOptions().stream().mapToDouble(option -> option.getExtraPrice() == null ? 0.0 : option.getExtraPrice()).sum();
+
+            double itemSubtotal = (item.getUnitPrice() + optionsTotal) * item.getQuantity();
+
+            itemResponse.setSubtotal(roundMoney(itemSubtotal));
+
+            itemResponses.add(itemResponse);
+            totalItems += item.getQuantity();
+        }
+
+        response.setItems(itemResponses);
+        response.setTotalItems(totalItems);
+
+        return response;
+    }
+
+    private double roundMoney(double amount) {
+        return java.math.BigDecimal.valueOf(amount).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue();
+    }
+
+
 }
+

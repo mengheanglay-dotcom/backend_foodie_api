@@ -4,6 +4,8 @@ Spring Boot REST API for the Flutter Foodie application.
 
 ## Architecture
 
+rotha
+
 controller -> service -> repository -> PostgreSQL
 
 Security:

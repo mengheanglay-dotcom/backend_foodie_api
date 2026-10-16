@@ -20,15 +20,16 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long customerId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String address;
 
     @Column(nullable = false)
     private String customerName;
 
+    @Column(nullable = true)
     private String city;
 
-    @Column(nullable = false)
+    @Column(nullable = true, name = "phone_number")
     private String phoneNumber;
 
     @OneToOne(fetch = FetchType.LAZY)

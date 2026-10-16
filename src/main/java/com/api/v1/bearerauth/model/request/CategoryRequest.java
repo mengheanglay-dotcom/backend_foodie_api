@@ -1,10 +1,20 @@
 package com.api.v1.bearerauth.model.request;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
-@Data
+@Getter
+@Setter
 public class CategoryRequest {
-    @NotBlank
-    private String name;
+    @NotBlank(message = "Category name is required")
+    @Size(max = 100, message = "Category name must be less than 100 characters")
+    private String categoryName;
+
+    @Size(max = 1000, message = "Description must be less than 1000 characters")
+    private String description;
+
+    private MultipartFile image;
 }
