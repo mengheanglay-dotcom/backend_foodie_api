@@ -5,6 +5,7 @@ import com.api.v1.bearerauth.model.enumerate.PaymentMethod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.util.List;
@@ -19,7 +20,9 @@ public class OrderRequest {
 
     private String deliveryAddress;
 
-    private String promoCode;
+    // Optional: the customer may select one reward from their wallet at checkout.
+    @Positive(message = "Reward ID must be positive")
+    private Long rewardId;
 
     @NotEmpty(message = "Order must contain at least one product")
     @Valid

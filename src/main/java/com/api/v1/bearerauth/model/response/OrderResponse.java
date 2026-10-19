@@ -13,7 +13,6 @@ import java.util.List;
 
 @Data
 public class OrderResponse {
-
     @JsonProperty("id")
     private Long orderId;
 
@@ -28,6 +27,7 @@ public class OrderResponse {
     @JsonProperty("address")
     private String deliveryAddress;
 
+    private Double subtotal;
     private Double deliveryFee;
 
     @JsonProperty("total")
@@ -37,7 +37,8 @@ public class OrderResponse {
     private Integer totalItems;
 
     private Long customerId;
-    private String promoCode;
+    private Long rewardId;
+    private String rewardTitle;
     private Double discount;
     private List<OrderItemResponse> items;
 }

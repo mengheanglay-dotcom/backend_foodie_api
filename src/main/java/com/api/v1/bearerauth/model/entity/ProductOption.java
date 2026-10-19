@@ -27,6 +27,11 @@ public class ProductOption {
     @Column(nullable = false)
     private OptionType optionType;
 
+    // For SIZE: final unit selling price of this size. For ADD_ON, leave null.
+    @Column
+    private Double price;
+
+    // For ADD_ON: price added to the selected size. Kept non-null for compatibility with existing schema.
     @Column(nullable = false)
     private Double extraPrice;
 

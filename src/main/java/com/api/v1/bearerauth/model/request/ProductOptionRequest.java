@@ -15,8 +15,12 @@ public class ProductOptionRequest {
     @NotNull
     private OptionType optionType;
 
-    @NotNull
-    @DecimalMin("0.0")
+    // Required when optionType = SIZE. This is the full price for the selected size.
+    @DecimalMin(value = "0.0", inclusive = false, message = "Size price must be greater than 0")
+    private Double price;
+
+    // Required when optionType = ADD_ON. This is added on top of the selected size price.
+    @DecimalMin(value = "0.0", message = "Add-on price must be zero or greater")
     private Double extraPrice;
 }
 

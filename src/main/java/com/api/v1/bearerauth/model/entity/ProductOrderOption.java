@@ -27,6 +27,11 @@ public class ProductOrderOption {
     @Column(nullable = false)
     private OptionType optionType;
 
+    // Snapshot of final size price (SIZE options only).
+    @Column
+    private Double price;
+
+    // Snapshot of the add-on charge; zero for SIZE options.
     @Column(nullable = false)
     private Double extraPrice;
 
