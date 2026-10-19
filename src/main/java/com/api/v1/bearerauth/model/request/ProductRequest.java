@@ -1,6 +1,9 @@
 package com.api.v1.bearerauth.model.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,14 +20,13 @@ public class ProductRequest {
     private Double unitPrice;
 
     @NotNull(message = "Rating is required")
-    @Min(value = 0, message = "Rating must be at least 0")
-    @Max(value = 5, message = "Rating must be at most 5")
+    @DecimalMin(value = "0.0", message = "Rating must be at least 0")
+    @DecimalMax(value = "5.0", message = "Rating must be at most 5")
     private Double rating;
 
-    @NotNull
+    @NotNull(message = "Image is required")
     private MultipartFile image;
 
     @NotNull(message = "Category ID is required")
     private Long categoryId;
 }
-

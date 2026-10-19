@@ -12,14 +12,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "category", uniqueConstraints = {@UniqueConstraint(name = "uk_category_name", columnNames = "category_name")})
+@Table(name = "category")
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long categoryId;
 
-    @Column(name = "category_name", nullable = false)
-    private String categoryName;
+    @Column(nullable = false, unique = true)
+    private String name;
 
     @Column(length = 1000)
     private String description;
@@ -30,4 +30,11 @@ public class Category {
     @OneToMany(mappedBy = "category")
     private List<Product> products = new ArrayList<>();
 
+    public String getCategoryName() {
+        return name;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.name = categoryName;
+    }
 }

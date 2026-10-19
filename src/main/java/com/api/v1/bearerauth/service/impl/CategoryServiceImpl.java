@@ -1,6 +1,5 @@
 package com.api.v1.bearerauth.service.impl;
 
-import com.api.v1.bearerauth.common.exception.CustomException;
 import com.api.v1.bearerauth.model.entity.Category;
 import com.api.v1.bearerauth.model.entity.Product;
 import com.api.v1.bearerauth.model.request.CategoryRequest;
@@ -49,19 +48,19 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponse create(CategoryRequest request) {
-        categoryRepository.findByCategoryNameIgnoreCase(request.getCategoryName().trim())
+        String categoryName = request.getCategoryName() == null ? "" : request.getCategoryName().trim();
+        categoryRepository.findByNameIgnoreCase(categoryName)
                 .ifPresent(category -> {
-                    throw new CustomException(HttpStatus.CONFLICT, "Category already exists");
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
                 });
 
         String imageUrl = null;
-
         if (hasImage(request.getImage())) {
             imageUrl = fileStorageService.store(request.getImage(), "categories");
         }
 
         Category category = Category.builder()
-                .categoryName(request.getCategoryName().trim())
+                .name(categoryName)
                 .description(request.getDescription())
                 .imageUrl(imageUrl)
                 .build();
@@ -73,23 +72,25 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse update(Long id, CategoryRequest request) {
         Category category = findCategory(id);
+        String categoryName = request.getCategoryName() == null ? "" : request.getCategoryName().trim();
 
-        categoryRepository.findByCategoryNameIgnoreCase(request.getCategoryName().trim())
+        categoryRepository.findByNameIgnoreCase(categoryName)
                 .filter(existingCategory -> !existingCategory.getCategoryId().equals(id))
                 .ifPresent(existingCategory -> {
-                    throw new CustomException(HttpStatus.CONFLICT, "Category already exists");
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
                 });
 
         String oldImageUrl = category.getImageUrl();
         String newImageUrl = null;
 
-        category.setCategoryName(request.getCategoryName().trim());
+        category.setCategoryName(categoryName);
         category.setDescription(request.getDescription());
 
         if (hasImage(request.getImage())) {
             newImageUrl = fileStorageService.store(request.getImage(), "categories");
             category.setImageUrl(newImageUrl);
         }
+
         Category savedCategory = categoryRepository.save(category);
 
         if (newImageUrl != null && oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
@@ -103,13 +104,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void delete(Long id) {
         Category category = findCategory(id);
-
         if (productRepository.existsByCategory(category)) {
-            throw new CustomException(HttpStatus.CONFLICT, "Cannot delete category because it has products");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete category because it has products");
         }
 
         String imageUrl = category.getImageUrl();
-
         categoryRepository.delete(category);
 
         if (imageUrl != null) {
@@ -131,8 +130,7 @@ public class CategoryServiceImpl implements CategoryService {
                 ? Collections.emptyList()
                 : category.getProducts();
 
-        List<ProductResponse> products = categoryProducts
-                .stream()
+        List<ProductResponse> products = categoryProducts.stream()
                 .map(this::toProductResponse)
                 .toList();
 

@@ -1,6 +1,5 @@
 package com.api.v1.bearerauth.service.impl;
 
-import com.api.v1.bearerauth.common.exception.CustomException;
 import com.api.v1.bearerauth.model.entity.Category;
 import com.api.v1.bearerauth.model.entity.Product;
 import com.api.v1.bearerauth.model.request.CreateProductRequest;
@@ -22,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +36,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> list(int page, int size, Sort.Direction direction,String search, String category) {
-
+    public Page<ProductResponse> list(int page, int size, Sort.Direction direction, String search, String category) {
         PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(direction, "productId"));
 
         String q = search == null ? "" : search.trim().toLowerCase();
@@ -45,20 +44,17 @@ public class ProductServiceImpl implements ProductService {
 
         return productRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-
             Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
 
             if (!q.isEmpty()) {
                 Predicate productNameLike = cb.like(cb.lower(root.get("productName")), "%" + q + "%");
                 Predicate categoryNameLike = cb.like(cb.lower(categoryJoin.get("categoryName")), "%" + q + "%");
-
                 predicates.add(cb.or(productNameLike, categoryNameLike));
             }
 
             if (!c.isEmpty()) {
                 predicates.add(cb.equal(cb.lower(categoryJoin.get("categoryName")), c));
             }
-
 
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable).map(this::toResponse);
@@ -75,11 +71,10 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponse create(CreateProductRequest request) {
         if (!hasImage(request.getImage())) {
-            throw new CustomException(HttpStatus.BAD_REQUEST, "Product image is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product image is required");
         }
 
         Category category = findCategory(request.getCategoryId());
-
         String imageUrl = fileStorageService.store(request.getImage(), "products");
 
         Product product = new Product();
@@ -92,7 +87,6 @@ public class ProductServiceImpl implements ProductService {
 
         return toResponse(productRepository.save(product));
     }
-
 
     @Override
     @Transactional
@@ -138,12 +132,12 @@ public class ProductServiceImpl implements ProductService {
 
     private Product findProduct(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Product not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
     }
 
     private Category findCategory(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Category not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
     }
 
     private boolean hasImage(MultipartFile image) {

@@ -46,14 +46,33 @@ Optional:
 ### Admin create product
 `POST /products`
 
+For `POST /products`, choose **form-data** in Swagger and use these fields:
+
+```text
+name       = Classic Burger
+subtitle   = Flame Grilled Beef
+price      = 5.99
+rating     = 4.8
+categoryId = 1
+image      = [Choose File]
+```
+
+Use `GET /products/categories` to populate the category select box. Categories are managed separately and cannot be entered as free text.
+Product create and update use `multipart/form-data`. Send the fields above as form fields and select a local image file using the `image` field. The image is stored locally by the API and its URL is returned as `imageUrl`.
+
+### Category management
+
+- `GET /products/categories`
+- `GET /products/categories/{id}`
+- `POST /products/categories` (admin)
+- `PUT /products/categories/{id}` (admin)
+- `DELETE /products/categories/{id}` (admin)
+
+Create and update request:
+
 ```json
 {
-  "name": "Classic Burger",
-  "subtitle": "Flame Grilled Beef",
-  "price": 5.99,
-  "rating": 4.8,
-  "imageUrl": "assets/images/burger.png",
-  "category": "Burger"
+  "name": "Burger"
 }
 ```
 

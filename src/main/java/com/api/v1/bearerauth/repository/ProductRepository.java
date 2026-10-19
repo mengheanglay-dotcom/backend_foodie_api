@@ -10,5 +10,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
     boolean existsByCategory(Category category);
     long countByCategory(Category category);
-
+    Page<Product> findAllByCategoryCategoryNameContainingIgnoreCase(String categoryName, Pageable pageable);
 }

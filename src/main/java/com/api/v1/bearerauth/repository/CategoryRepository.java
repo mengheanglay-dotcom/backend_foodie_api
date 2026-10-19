@@ -10,7 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    Optional<Category> findByCategoryNameIgnoreCase(String categoryName);
+    Optional<Category> findByNameIgnoreCase(String name);
+
+    default Optional<Category> findByCategoryNameIgnoreCase(String categoryName) {
+        return findByNameIgnoreCase(categoryName);
+    }
+
     @EntityGraph(attributePaths = "products")
     @Query("select c from Category c")
     List<Category> findAllWithProducts();
@@ -18,6 +23,4 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     @EntityGraph(attributePaths = "products")
     @Query("select c from Category c where c.categoryId = :id")
     Optional<Category> findByIdWithProducts(@Param("id") Long id);
-
 }
-

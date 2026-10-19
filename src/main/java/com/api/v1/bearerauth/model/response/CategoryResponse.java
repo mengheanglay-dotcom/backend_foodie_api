@@ -16,6 +16,4 @@ public class CategoryResponse {
     private String imageUrl;
     private Long productCount;
     private List<ProductResponse> products;
-
 }
-

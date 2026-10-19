@@ -1,6 +1,5 @@
 package com.api.v1.bearerauth.model.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 
@@ -22,8 +21,6 @@ public class ProductResponse {
     private Double unitPrice;
     private Double rating;
     private String imageUrl;
-
     private Long categoryId;
     private String categoryName;
-
 }

@@ -34,8 +34,7 @@ public class CategoryController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<CategoryResponse>> create(@Valid @ModelAttribute CategoryRequest request) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseUtil.success(HttpStatus.CREATED, categoryService.create(request)));
     }
 
@@ -43,8 +42,7 @@ public class CategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<CategoryResponse>> update(
             @PathVariable Long id,
-            @Valid @ModelAttribute CategoryRequest request
-    ) {
+            @Valid @ModelAttribute CategoryRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, categoryService.update(id, request)));
     }
 

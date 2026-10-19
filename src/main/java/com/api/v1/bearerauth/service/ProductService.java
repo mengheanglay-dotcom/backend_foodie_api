@@ -8,12 +8,8 @@ import org.springframework.data.domain.Sort;
 
 public interface ProductService {
     Page<ProductResponse> list(int page, int size, Sort.Direction direction, String search, String category);
-
     ProductResponse get(Long id);
-
     ProductResponse create(CreateProductRequest request);
-
     ProductResponse update(Long id, UpdateProductRequest request);
-
     void delete(Long id);
 }
